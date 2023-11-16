@@ -8,19 +8,19 @@ public class Employee {
     public String name;
     public String position;
     public int overtime;
-    double salary;
+    public double salary;
 
 
-    public Employee(String name, String position, int overtime) {
+    public Employee(String code, String name, String position, int overtime, double salary) {
         this.code = generateEmployeeId();
         this.name = name;
         this.position = position;
         this.overtime = overtime;
-        calculateSalary();
+        this.salary = calculateSalary();
     }
 
     public double calculateSalary() {
-        if (position.equals("Full-time staff")) {
+        if (position.equals("Full time staff")) {
             salary = 6000000 + (overtime * 500000);
         } else if (position.equals("Manager")) {
             salary = 10000000 + (overtime * 500000);
@@ -31,12 +31,13 @@ public class Employee {
     }
 
     public void displayInfo() {
-//        if (position.equals("staff part-time")) {
-//            overtime = Integer.parseInt(overtime + " hours");
-//        } else {
-//            overtime = Integer.parseInt(overtime + " days");
-//        }
-        System.out.printf("%-20s%-25s%-25s%-15s%-15.0f\n", code, name, position, overtime, salary);
+        String overtimeFormat;
+        if (position.equals("Part time staff")) {
+            overtimeFormat = overtime + " hours";
+        } else {
+            overtimeFormat = overtime + " days";
+        }
+        System.out.printf("%-20s%-25s%-25s%-15s%-15.0f\n", code, name, position, overtimeFormat, salary);
     }
 
     private static int nextId = 1;
