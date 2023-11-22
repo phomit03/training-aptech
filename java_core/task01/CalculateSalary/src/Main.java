@@ -2,17 +2,30 @@ import model.Employee;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Scanner;
+import java.util.*;
+
+import static model.Employee.generateEmployeeId;
 
 public class Main {
-    private static Scanner scanner = new Scanner(System.in);
+    private static final int MANAGER = 1;
+    private static final int FULL_TIME_STAFF = 2;
+    private static final int PART_TIME_STAFF = 3;
+    private static final String fileName = "./src/data/salary_" + getFormattedFile() + ".txt";
+    private static final Scanner scanner = new Scanner(System.in);
 
     //get input
     private static String getStringInput(String input) {
-        System.out.print(input);
-        return scanner.nextLine();
+        String inputCheck;
+        do {
+            System.out.print(input);
+            inputCheck = scanner.nextLine();
+
+            if(inputCheck.isEmpty()){
+                System.out.println("\nError: Please enter a non-empty value!");
+            }
+        } while (inputCheck.isEmpty());
+
+        return inputCheck;
     }
 
     private static int getIntInput(String input) {
@@ -21,14 +34,14 @@ public class Main {
                 System.out.print(input);
                 return Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
-                System.out.println("please enter integer type!");
+                System.out.println("Error: Please enter integer type!");
             }
         }
     }
 
     //write - read data
-    private static void readData(String fileName, ArrayList<Employee> employees) {
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+    private static void readData(Map<String, Employee> employees) {
+        try (BufferedReader br = new BufferedReader(new FileReader(Main.fileName))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] data = line.split(" - ");
@@ -42,18 +55,18 @@ public class Main {
                 int overtimeFormat = Integer.parseInt(overtime.split(" ")[0]);  //tach chuoi, lay mang dau tien (la gia tri overtime)
 
                 Employee employee = new Employee(code, name, position, overtimeFormat, salary);
-                employees.add(employee);
+                employees.put(code, employee);
             }
         } catch (FileNotFoundException e) {
-            System.out.println("File does not exist. Creating a new file.");
+            System.out.println("Error: File does not exist. Creating a new file.");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static void writeData(String fileName, ArrayList<Employee> employees) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileName))) {
-            for (Employee employee : employees) {
+    private static void writeData(Map<String, Employee> employees) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(Main.fileName))) {
+            for (Employee employee : employees.values()) {
                 String overtimeFormat;
                 if (employee.position.equals("Part time staff")) {
                     overtimeFormat = employee.overtime + " hours";
@@ -72,13 +85,54 @@ public class Main {
         return new SimpleDateFormat("yyyyMM").format(new Date());
     }
 
+    //get position (contains)
+    private static String getPosition(int position) {
+        switch (position) {
+            case MANAGER:
+                return "Manager";
+            case FULL_TIME_STAFF:
+                return "Full time staff";
+            case PART_TIME_STAFF:
+                return "Part time staff";
+            default:
+                System.out.println("Error: Invalid employee type. Please enter 1 or 2 or 3!");
+                return null;
+        }
+    }
+
+    //overtime by position (check exceeds the prescribed)
+    private static int getOvertimeByPosition(String position) {
+        int overtime;
+
+        while (true) {
+            if (position.equals("Manager") || position.equals("Full time staff")) {
+                overtime = getIntInput("Please enter the number of overtime days: ");
+
+                if (overtime > 8) {
+                    System.out.println("\nError: The number of overtime days exceeds the prescribed limit.");
+                } else {
+                    break;  //thoat khoi vong lap
+                }
+            } else {
+                overtime = getIntInput("Please enter overtime hours: ");
+
+                if (overtime > 64) {
+                    System.out.println("\nError: The number of overtime hours exceeds the prescribed level.");
+                } else {
+                    break;
+                }
+            }
+        }
+        return overtime;
+    }
+
+
     //main
     public static void main(String[] args) {
-        ArrayList<Employee> employees = new ArrayList<>();
-        String fileName = "./src/data/salary_" + getFormattedFile() + ".txt";
+        Map<String, Employee> employees = new LinkedHashMap<>();
 
         //read data
-        readData(fileName, employees);
+        readData(employees);
 
         while (true) {
             System.out.println("\n===== Employee Salary Management =====");
@@ -109,56 +163,48 @@ public class Main {
                     displayAllEmployeeInfo(employees);
                     break;
                 case 0:
-                    //save data
-                    writeData(fileName, employees);
-
-                    System.out.println("Program End!");
+                    System.out.println("Notification: Program End!");
                     System.exit(0);     //close
                     break;
                 default:
-                    System.out.println("Invalid choice. Please choose again.");
+                    System.out.println("Notification: Invalid choice. Please choose again.");
             }
         }
     }
 
-    private static void addEmployeeInfo(ArrayList<Employee> employees) {
+    private static void addEmployeeInfo(Map<String, Employee> employees) {
         int numberOfEmployee = getIntInput("\nEnter the number of employees in the factory: ");
 
         for (int i = 0; i < numberOfEmployee; i++) {
             System.out.println("\nEnter information for employee number " + (i + 1) + ":");
-            String code = null;
+            String code = generateEmployeeId();
+
             String name = getStringInput("Employee name: ");
+
             int choosePosition = getIntInput("Position (1: Manager / 2: Full time staff / 3: Part time staff): ");
-            String position;
-            switch (choosePosition) {
-                case 1:
-                    position = "Manager";
-                    break;
-                case 2:
-                    position = "Full time staff";
-                    break;
-                case 3:
-                    position = "Part time staff";
-                    break;
-                default:
-                    System.out.println("Invalid employee type. Please enter 1 or 2 or 3!");
-                    return;
-            }
-            int overtime = getIntInput("Overtime duration (days or hours): ");
+            String position = getPosition(choosePosition);
+
+            int overtime = getOvertimeByPosition(position);
+
             double salary = 0;
+
             Employee employee = new Employee(code, name, position, overtime, salary);
-            employees.add(employee);
-            System.out.println("\nEmployee number " + (i + 1) + " added successfully!");
+            employees.put(code, employee);
+            System.out.println("\nSuccess: Employee number " + (i + 1) + " added successfully!");
         }
-        System.out.println("\nEmployee information entry complete.");
+
+        System.out.println("\nNotification: Employee information entry complete.\n");
+
+        //save data
+        writeData(employees);
 
         //Show list employee
         displayAllEmployeeInfo(employees);
     }
 
-    private static void editEmployeeInfo(ArrayList<Employee> employees) {
+    private static void editEmployeeInfo(Map<String, Employee> employees) {
         if (employees.isEmpty()) {
-            System.out.println("\nNo employee information available.");
+            System.out.println("\nNotification: No employee information available.");
             return;
         }
 
@@ -166,67 +212,65 @@ public class Main {
         displayAllEmployeeInfo(employees);
 
         String employeeCode = getStringInput("\nEnter the employee code to edit: ");
-        for (Employee employee : employees) {
-            if (employee.code.equals(employeeCode)) {
+        Employee employee = employees.get(employeeCode);
+
+        if (employee != null) {
+            if(employee.code.equals(employeeCode)){
                 System.out.println("\nEnter new information:");
 
                 String newName = getStringInput("New name: ");
 
-                int choosePosition = getIntInput("Position (1: Manager / 2: Full time staff / " + "3: Part time staff): ");
-                String newPosition;
-                switch (choosePosition) {
-                    case 1:
-                        newPosition = "Manager";
-                        break;
-                    case 2:
-                        newPosition = "Full time staff";
-                        break;
-                    case 3:
-                        newPosition = "Part time staff";
-                        break;
-                    default:
-                        System.out.println("Invalid employee type. Please enter 1 or 2 or 3!");
-                        return;
-                }
+                int choosePosition = getIntInput("Position (1: Manager / 2: Full time staff / 3: Part time staff): ");
+                String newPosition = getPosition(choosePosition);
 
-                int newOvertime = getIntInput("New overtime duration (days or hours): ");
+                int newOvertime = getOvertimeByPosition(newPosition);
 
                 employee.name = newName;
                 employee.position = newPosition;
                 employee.overtime = newOvertime;
                 employee.calculateSalary();
-                System.out.println("\nEmployee information with code '" + employeeCode + "' updated successfully!");
+
+                System.out.println("\nSuccess: Employee information with code '" + employeeCode + "' updated successfully!");
                 return;
             }
+        } else {
+            System.out.println("Notification: No employee found with code '" + employeeCode + "'!");
         }
-        System.out.println("No employee found with code '" + employeeCode + "'!");
+
+        //save data
+        writeData(employees);
 
         //Show list employee
         displayAllEmployeeInfo(employees);
     }
 
-    private static void deleteEmployeeInfo(ArrayList<Employee> employees) {
+    private static void deleteEmployeeInfo(Map<String, Employee> employees) {
         if (employees.isEmpty()) {
-            System.out.println("\nNo employee information available.");
+            System.out.println("\nNotification: No employee information available.");
             return;
         }
         //Show list employee
         displayAllEmployeeInfo(employees);
 
         String employeeCode = getStringInput("\nEnter the employee code to delete: ");
-        for (Employee employee : employees) {
-            if (employee.code.equals(employeeCode)) {
-                employees.remove(employee);
-                System.out.println("\nEmployee information with code '" + employeeCode + "' deleted successfully!");
-                return;
+        Employee employee = employees.get(employeeCode);
+
+        if (employee != null) {
+            if(employee.code.equals(employeeCode)){
+                employees.remove(employeeCode);
+                System.out.println("\nSuccess: Employee information with code '" + employeeCode + "' deleted successfully!");
             }
+        } else {
+            System.out.println("Notification: No employee found with code '" + employeeCode + "'!");
         }
-        System.out.println("No employee found with code '" + employeeCode + "'!");
+
+        //save data
+        writeData(employees);
     }
 
-    private static void searchEmployeeInfo(ArrayList<Employee> employees) {
+    private static void searchEmployeeInfo(Map<String, Employee> employees) {
         if (employees.isEmpty()) {
-            System.out.println("No employee information available.");
+            System.out.println("Notification: No employee information available.");
             return;
         }
 
@@ -241,28 +285,29 @@ public class Main {
         System.out.println("------------------|------------------------|------------------------|--------------|------------");
 
         boolean checkNotFound = false;
-        for (Employee employee : employees) {
-            if (employee.name.equals(nameToSearch) && monthToSearch.equals(getFormattedFile())) {
+        for (Employee employee : employees.values()) {
+            //name duoc so sanh = contains thay vi equal (%s%)
+            if (employee.name.contains(nameToSearch) && monthToSearch.equals(getFormattedFile())) {
                 employee.displayInfo();
                 checkNotFound = true;
             }
         }
 
         if(!checkNotFound) {
-            System.out.println("No employee found with name '" + nameToSearch + "' for month '" + monthToSearch + "'!");
+            System.out.println("Notification: No employee found with name '" + nameToSearch + "' for month '" + monthToSearch + "'!");
         }
     }
 
-    private static void displayAllEmployeeInfo(ArrayList<Employee> employees) {
+    private static void displayAllEmployeeInfo(Map<String, Employee> employees) {
         if (employees.isEmpty()) {
-            System.out.println("\nNo employee information available.");
+            System.out.println("\nNotification: No employee information available.");
         } else {
-            System.out.println("=================================== Employee Information ===================================");
+            System.out.println("\n=================================== Employee Information ===================================");
 
             System.out.println("------------------------------------------------------------------------------------------------");
             System.out.printf("%-20s%-25s%-25s%-15s%-15s\n", "Employee Code", "Name", "Position", "Overtime", "Salary");
             System.out.println("------------------|------------------------|------------------------|--------------|------------");
-            for (Employee employee : employees) {
+            for (Employee employee : employees.values()) {
                 employee.displayInfo();
             }
         }
