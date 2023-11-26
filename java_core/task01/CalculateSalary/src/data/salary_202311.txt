@@ -1,4 +1,5 @@
-E001 - Mai Thanh Vinh - Manager - 4 days - 12000000
-E002 - Nguyen Xuan Thao - Full time staff - 4 days -  8000000
-E003 - Le Ceng - Full time staff - 5 days -  8500000
-E004 - Trinh Cong - Part time staff - 20 hours -  1240000
+EMP001 - Mai Thanh Vinh - Manager - 4 days - 12000000
+EMP002 - Nguyen Xuan Thao - Full time staff - 5 days -  8500000
+EMP003 - Le Ceng - Full time staff - 5 days -  8500000
+EMP004 - Trinh Cong - Part time staff - 20 hours -  1240000
+EMP005 - Do Minh - Part time staff - 16 hours -  1040000

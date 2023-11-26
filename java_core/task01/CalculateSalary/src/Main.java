@@ -1,135 +1,16 @@
 import model.Employee;
+import model.FullTimeEmployee;
+import model.PartTimeEmployee;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static model.Employee.generateEmployeeId;
+import static utils.EmployeeUtils.*;
 
 public class Main {
-    private static final int MANAGER = 1;
-    private static final int FULL_TIME_STAFF = 2;
-    private static final int PART_TIME_STAFF = 3;
-    private static final String fileName = "./src/data/salary_" + getFormattedFile() + ".txt";
-    private static final Scanner scanner = new Scanner(System.in);
-
-    //get input
-    private static String getStringInput(String input) {
-        String inputCheck;
-        do {
-            System.out.print(input);
-            inputCheck = scanner.nextLine();
-
-            if(inputCheck.isEmpty()){
-                System.out.println("\nError: Please enter a non-empty value!");
-            }
-        } while (inputCheck.isEmpty());
-
-        return inputCheck;
-    }
-
-    private static int getIntInput(String input) {
-        while (true) {
-            try {
-                System.out.print(input);
-                return Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Error: Please enter integer type!");
-            }
-        }
-    }
-
-    //write - read data
-    private static void readData(Map<String, Employee> employees) {
-        try (BufferedReader br = new BufferedReader(new FileReader(Main.fileName))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] data = line.split(" - ");
-                String code = data[0];
-                String name = data[1];
-                String position = data[2];
-                String overtime = data[3];
-                double salary = Double.parseDouble(data[4]);
-
-                // format overtime (string) -> int
-                int overtimeFormat = Integer.parseInt(overtime.split(" ")[0]);  //tach chuoi, lay mang dau tien (la gia tri overtime)
-
-                Employee employee = new Employee(code, name, position, overtimeFormat, salary);
-                employees.put(code, employee);
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("Error: File does not exist. Creating a new file.");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void writeData(Map<String, Employee> employees) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(Main.fileName))) {
-            for (Employee employee : employees.values()) {
-                String overtimeFormat;
-                if (employee.position.equals("Part time staff")) {
-                    overtimeFormat = employee.overtime + " hours";
-                } else {
-                    overtimeFormat = employee.overtime + " days";
-                }
-                bw.write(String.format("%s - %s - %s - %s - %8.0f\n", employee.code, employee.name, employee.position, overtimeFormat, employee.salary));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    //format file name with "yyyyMM" at the moment
-    private static String getFormattedFile() {
-        return new SimpleDateFormat("yyyyMM").format(new Date());
-    }
-
-    //get position (contains)
-    private static String getPosition(int position) {
-        switch (position) {
-            case MANAGER:
-                return "Manager";
-            case FULL_TIME_STAFF:
-                return "Full time staff";
-            case PART_TIME_STAFF:
-                return "Part time staff";
-            default:
-                System.out.println("Error: Invalid employee type. Please enter 1 or 2 or 3!");
-                return null;
-        }
-    }
-
-    //overtime by position (check exceeds the prescribed)
-    private static int getOvertimeByPosition(String position) {
-        int overtime;
-
-        while (true) {
-            if (position.equals("Manager") || position.equals("Full time staff")) {
-                overtime = getIntInput("Please enter the number of overtime days: ");
-
-                if (overtime > 8) {
-                    System.out.println("\nError: The number of overtime days exceeds the prescribed limit.");
-                } else {
-                    break;  //thoat khoi vong lap
-                }
-            } else {
-                overtime = getIntInput("Please enter overtime hours: ");
-
-                if (overtime > 64) {
-                    System.out.println("\nError: The number of overtime hours exceeds the prescribed level.");
-                } else {
-                    break;
-                }
-            }
-        }
-        return overtime;
-    }
-
-
-    //main
     public static void main(String[] args) {
-        Map<String, Employee> employees = new LinkedHashMap<>();
+        LinkedHashMap<String, Employee> employees = new LinkedHashMap<>();
 
         //read data
         readData(employees);
@@ -172,24 +53,36 @@ public class Main {
         }
     }
 
-    private static void addEmployeeInfo(Map<String, Employee> employees) {
+    private static void addEmployeeInfo(LinkedHashMap<String, Employee> employees) {
         int numberOfEmployee = getIntInput("\nEnter the number of employees in the factory: ");
 
         for (int i = 0; i < numberOfEmployee; i++) {
             System.out.println("\nEnter information for employee number " + (i + 1) + ":");
-            String code = generateEmployeeId();
+
+            String code = generateEmployeeCode(employees);
 
             String name = getStringInput("Employee name: ");
 
             int choosePosition = getIntInput("Position (1: Manager / 2: Full time staff / 3: Part time staff): ");
             String position = getPosition(choosePosition);
 
+            assert position != null;
             int overtime = getOvertimeByPosition(position);
 
-            double salary = 0;
+            if (position.equals("Manager") || position.equals("Full time staff")) {
+                Employee fullTimeEmployee = new FullTimeEmployee(position, overtime);
+                fullTimeEmployee.setCode(code);
+                fullTimeEmployee.setName(name);
+                fullTimeEmployee.calculateSalary();
+                employees.put(code, fullTimeEmployee);
+            } else {
+                Employee partTimeEmployee = new PartTimeEmployee(position, overtime);
+                partTimeEmployee.setCode(code);
+                partTimeEmployee.setName(name);
+                partTimeEmployee.calculateSalary();
+                employees.put(code, partTimeEmployee);
+            }
 
-            Employee employee = new Employee(code, name, position, overtime, salary);
-            employees.put(code, employee);
             System.out.println("\nSuccess: Employee number " + (i + 1) + " added successfully!");
         }
 
@@ -202,7 +95,7 @@ public class Main {
         displayAllEmployeeInfo(employees);
     }
 
-    private static void editEmployeeInfo(Map<String, Employee> employees) {
+    private static void editEmployeeInfo(LinkedHashMap<String, Employee> employees) {
         if (employees.isEmpty()) {
             System.out.println("\nNotification: No employee information available.");
             return;
@@ -215,7 +108,7 @@ public class Main {
         Employee employee = employees.get(employeeCode);
 
         if (employee != null) {
-            if(employee.code.equals(employeeCode)){
+            if(employee.getCode().equals(employeeCode)){
                 System.out.println("\nEnter new information:");
 
                 String newName = getStringInput("New name: ");
@@ -223,15 +116,23 @@ public class Main {
                 int choosePosition = getIntInput("Position (1: Manager / 2: Full time staff / 3: Part time staff): ");
                 String newPosition = getPosition(choosePosition);
 
+                assert newPosition != null;
                 int newOvertime = getOvertimeByPosition(newPosition);
 
-                employee.name = newName;
-                employee.position = newPosition;
-                employee.overtime = newOvertime;
-                employee.calculateSalary();
+                if (employee instanceof FullTimeEmployee) {
+                    employee.setName(newName);
+                    ((FullTimeEmployee) employee).setPosition(newPosition);
+                    ((FullTimeEmployee) employee).setOvertime(newOvertime);
+                    employee.calculateSalary();
+                }
+                if (employee instanceof PartTimeEmployee) {
+                    employee.setName(newName);
+                    ((PartTimeEmployee) employee).setPosition(newPosition);
+                    ((PartTimeEmployee) employee).setOvertime(newOvertime);
+                    employee.calculateSalary();
+                }
 
                 System.out.println("\nSuccess: Employee information with code '" + employeeCode + "' updated successfully!");
-                return;
             }
         } else {
             System.out.println("Notification: No employee found with code '" + employeeCode + "'!");
@@ -244,7 +145,7 @@ public class Main {
         displayAllEmployeeInfo(employees);
     }
 
-    private static void deleteEmployeeInfo(Map<String, Employee> employees) {
+    private static void deleteEmployeeInfo(LinkedHashMap<String, Employee> employees) {
         if (employees.isEmpty()) {
             System.out.println("\nNotification: No employee information available.");
             return;
@@ -256,7 +157,7 @@ public class Main {
         Employee employee = employees.get(employeeCode);
 
         if (employee != null) {
-            if(employee.code.equals(employeeCode)){
+            if(employee.getCode().equals(employeeCode)){
                 employees.remove(employeeCode);
                 System.out.println("\nSuccess: Employee information with code '" + employeeCode + "' deleted successfully!");
             }
@@ -268,7 +169,7 @@ public class Main {
         writeData(employees);
     }
 
-    private static void searchEmployeeInfo(Map<String, Employee> employees) {
+    private static void searchEmployeeInfo(LinkedHashMap<String, Employee> employees) {
         if (employees.isEmpty()) {
             System.out.println("Notification: No employee information available.");
             return;
@@ -287,7 +188,7 @@ public class Main {
         boolean checkNotFound = false;
         for (Employee employee : employees.values()) {
             //name duoc so sanh = contains thay vi equal (%s%)
-            if (employee.name.contains(nameToSearch) && monthToSearch.equals(getFormattedFile())) {
+            if (employee.getName().contains(nameToSearch) && monthToSearch.equals(getFormattedFile())) {
                 employee.displayInfo();
                 checkNotFound = true;
             }
@@ -298,7 +199,7 @@ public class Main {
         }
     }
 
-    private static void displayAllEmployeeInfo(Map<String, Employee> employees) {
+    private static void displayAllEmployeeInfo(LinkedHashMap<String, Employee> employees) {
         if (employees.isEmpty()) {
             System.out.println("\nNotification: No employee information available.");
         } else {
