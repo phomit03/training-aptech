@@ -2,7 +2,7 @@ package com.example.thread_queue_jpa.controller;
 
 import com.example.thread_queue_jpa.entity.Customer;
 import com.example.thread_queue_jpa.service.CustomerMultiThreadQueueService;
-import com.example.thread_queue_jpa.service.CustomerThreadQueueService;
+import com.example.thread_queue_jpa.service.CustomerQueueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,7 @@ public class CustomerController {
     CustomerMultiThreadQueueService customerMultiThreadQueueService;
 
     @Autowired
-    CustomerThreadQueueService customerThreadQueueService;
+    CustomerQueueService customerQueueService;
 
     @PostMapping("/multi_thread/save")
     public ResponseEntity<String> addCustomerMultiThread(@RequestBody List<Customer> customers) {
@@ -25,9 +25,9 @@ public class CustomerController {
         return new ResponseEntity<>("Customer added successfully using multi thread", HttpStatus.CREATED);
     }
 
-    @PostMapping("/thread/save")
+    @PostMapping("/save")
     public ResponseEntity<String> addCustomerThread(@RequestBody List<Customer> customers) {
-        customerThreadQueueService.enQueueCustomer(customers);
+        customerQueueService.enQueueCustomer(customers);
         return new ResponseEntity<>("Customer added successfully using thread", HttpStatus.CREATED);
     }
 
