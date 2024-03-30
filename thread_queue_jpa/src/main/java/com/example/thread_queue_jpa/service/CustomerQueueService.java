@@ -38,7 +38,7 @@ public class CustomerQueueService {
         }
         if (!listCustomerHandle.isEmpty()) {
             customerRepository.saveAll((listCustomerHandle));    //Luu vao db
-            customerQueue.clear();
+            customerQueue.clear();  //clear
         }
     }
 }
