@@ -19,22 +19,16 @@ public class CustomerController {
     @Autowired
     CustomerQueueService customerQueueService;
 
-    @PostMapping("/multi_thread/save")
-    public ResponseEntity<String> addCustomerMultiThread(@RequestBody List<Customer> customers) {
-        customerMultiThreadQueueService.enQueueCustomer(customers);
-        return new ResponseEntity<>("Customer added successfully using multi thread", HttpStatus.CREATED);
-    }
-
     @PostMapping("/save")
     public ResponseEntity<String> addCustomerThread(@RequestBody List<Customer> customers) {
         customerQueueService.enQueueCustomer(customers);
         return new ResponseEntity<>("Customer added successfully using thread", HttpStatus.CREATED);
     }
 
-    /*@PutMapping("update/{id}")
-    public ResponseEntity<String> updateCustomer(@PathVariable Long id, @RequestBody Customer customer) {
-        customer.setId(id);
-        customerQueueService.editCustomer(customer);
-        return new ResponseEntity<>("Customer updated successfully", HttpStatus.OK);
-    }*/
+    @PostMapping("/multi_thread/save")
+    public ResponseEntity<String> addCustomerMultiThread(@RequestBody List<Customer> customers) {
+        customerMultiThreadQueueService.enQueueCustomer(customers);
+        return new ResponseEntity<>("Customer added successfully using multi thread", HttpStatus.CREATED);
+    }
+
 }

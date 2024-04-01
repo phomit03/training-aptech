@@ -32,13 +32,17 @@ public class CustomerQueueService {
     // Ham xu ly queue
     private void processQueue() {
         //Tao 1 list de luu danh sach can xu ly
-        List<Customer> listCustomerHandle = new ArrayList<>();
-        while (!customerQueue.isEmpty() && listCustomerHandle.size() < QUEUE_SIZE) {
-            listCustomerHandle.add(customerQueue.poll());    //Lay du lieu tu queue voi kich thuoc toi da
-        }
-        if (!listCustomerHandle.isEmpty()) {
-            customerRepository.saveAll((listCustomerHandle));    //Luu vao db
-            customerQueue.clear();  //clear
+        List<Customer> listCustomerHandled = new ArrayList<>();
+
+        //kiem tra queue co gia tri hay khong
+        if (!customerQueue.isEmpty()) {
+            while (!customerQueue.isEmpty() && listCustomerHandled.size() < QUEUE_SIZE) {
+                listCustomerHandled.add(customerQueue.poll());    //Lay du lieu tu queue voi kich thuoc toi da
+            }
+            if (!listCustomerHandled.isEmpty()) {
+                customerRepository.saveAll((listCustomerHandled));    //Luu vao db
+                customerQueue.clear();  //clear
+            }
         }
     }
 }
